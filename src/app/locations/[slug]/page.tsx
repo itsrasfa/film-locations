@@ -59,12 +59,8 @@ async function getLocationBySlug(slug: string): Promise<FilmLocation | null> {
   return data.filmLocation;
 }
 
-export default async function LocationPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const { slug } = params;
+export default async function LocationPage(props: any) {
+  const { slug } = props.params;
   const location = await getLocationBySlug(slug);
 
   if (!location) return notFound();
