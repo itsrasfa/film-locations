@@ -1,101 +1,182 @@
-import Image from "next/image";
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { useFilmLocations } from '@/hooks/useFilmLocations';
+import {
+  Film,
+  Drama,
+  Heart,
+  FlaskConical,
+  Ghost,
+  Laugh,
+  Clapperboard,
+  BookOpenCheck,
+  Sparkles,
+  ListFilter,
+  Music,
+} from 'lucide-react';
 
-export default function Home() {
+export default function Page() {
+  const router = useRouter();
+  const { locations, loading, error } = useFilmLocations();
+  const [map, setMap] = useState<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState('all');
+
+  const genreOptions = [
+    { label: 'Todos', value: 'all', icon: ListFilter },
+    { label: 'Ação', value: 'action', icon: Film },
+    { label: 'Drama', value: 'drama', icon: Drama },
+    { label: 'Romance', value: 'romance', icon: Heart },
+    { label: 'Ficção', value: 'sciFi', icon: FlaskConical },
+    { label: 'Terror', value: 'horror', icon: Ghost },
+    { label: 'Comédia', value: 'comedy', icon: Laugh },
+    { label: 'Animação', value: 'animation', icon: Clapperboard },
+    { label: 'Documentário', value: 'documentary', icon: BookOpenCheck },
+    { label: 'Fantasia', value: 'fantasy', icon: Sparkles },
+    { label: 'Musical', value: 'musical', icon: Music }, // adicionado
+  ];
+
+  const filteredLocations =
+    selectedGenre === 'all'
+      ? locations
+      : locations.filter((loc) =>
+          loc.genre
+            .split(',')
+            .map((g) => g.trim().toLowerCase())
+            .includes(selectedGenre.toLowerCase()),
+        );
+
+  useEffect(() => {
+    if (error) console.error(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (!map && filteredLocations.length > 0) {
+      const mapInstance = new maplibregl.Map({
+        container: 'map',
+        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        center: [0, 20],
+        zoom: 2,
+        pitch: 0,
+        bearing: 0,
+        attributionControl: false,
+      });
+
+      mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+      mapInstance.on('load', () => {
+        mapInstance.setPaintProperty(
+          'background',
+          'background-color',
+          '#061016',
+        );
+        mapInstance.setPaintProperty(
+          'water',
+          'fill-color',
+          'rgba(38, 70, 83, 0.7)',
+        );
+        mapInstance.setPaintProperty('landuse', 'fill-color', '#576f7c');
+
+        const layers = mapInstance.getStyle().layers;
+        layers.forEach((layer) => {
+          if (layer.type === 'symbol' && layer.layout?.['text-field']) {
+            mapInstance.setPaintProperty(layer.id, 'text-color', '#334e5e');
+            mapInstance.setPaintProperty(layer.id, 'text-halo-width', 0.5);
+            mapInstance.setPaintProperty(
+              layer.id,
+              'text-halo-color',
+              'rgba(0, 0, 0, 0.3)',
+            );
+          }
+          if (layer.type === 'line' && /boundary|border|line/i.test(layer.id)) {
+            try {
+              mapInstance.setPaintProperty(layer.id, 'line-color', '#334e5e');
+            } catch {}
+          }
+        });
+      });
+
+      setMap(mapInstance);
+    }
+  }, [map, filteredLocations.length]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+
+    filteredLocations.forEach((loc) => {
+      const marker = new maplibregl.Marker()
+        .setLngLat([loc.longitude, loc.latitude])
+        .addTo(map);
+
+      marker.getElement().addEventListener('click', () => {
+        map.flyTo({
+          center: [loc.longitude, loc.latitude],
+          zoom: 15,
+          pitch: 45,
+          bearing: 20,
+          speed: 1.2,
+          curve: 1.4,
+        });
+        router.push(`/locations/${loc.slug}`);
+      });
+
+      markersRef.current.push(marker);
+    });
+  }, [map, filteredLocations, router]);
+
+  if (loading) return <div>Carregando mapa...</div>;
+  if (error) return <div>Erro ao carregar locais: {error}</div>;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex flex-col h-screen">
+      <header className="backdrop-blur-lg bg-white/1 text-white px-6 py-4 shadow-lg border-b border-white/5">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Where They Filmed</h1>
+            <p className="text-sm text-white/70 max-w-2xl mt-1">
+              Explore locações reais onde filmes e séries famosas foram gravados
+              ao redor do mundo. <br />
+              Use os filtros para ver apenas os gêneros que mais te interessam e
+              clique nos pontos do mapa para descobrir curiosidades sobre cada
+              cenário.
+            </p>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar flex-nowrap">
+            {genreOptions.map(({ label, value, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => setSelectedGenre(value)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  selectedGenre === value
+                    ? 'bg-[#1C3641] text-white border-[#1C3641]'
+                    : 'bg-white/2 text-white border-white/10 hover:bg-transparent'
+                }`}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+      </header>
+
+      <div id="map" className="flex-grow" />
+      <footer className="backdrop-blur-lg bg-white/1 text-sm text-gray-400 text-center px-6 py-4 shadow-lg">
+        Desenvolvido por{' '}
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          href="https://itsrasfa.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
+          className="underline hover:text-white"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
+          Rafaela
         </a>
       </footer>
     </div>
