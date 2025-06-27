@@ -82,7 +82,7 @@ export default async function LocationPage(props: any) {
               <h1 className="text-3xl font-bold mb-4">{location.title}</h1>
 
               <Image
-                src={location.image.url}
+                src={location?.image?.url}
                 alt={location.title}
                 width={800}
                 height={500}
@@ -122,17 +122,6 @@ export default async function LocationPage(props: any) {
                   {location.content}
                 </p>
               </div>
-
-              {location.sceneUrl && (
-                <a
-                  href={location.sceneUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-[#576f7c] hover:underline text-sm"
-                >
-                  Ver cena no vídeo
-                </a>
-              )}
             </div>
           </div>
         </div>
