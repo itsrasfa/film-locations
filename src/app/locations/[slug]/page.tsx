@@ -19,10 +19,6 @@ interface FilmLocation {
   content: string;
 }
 
-interface LocationPageProps {
-  params: { slug: string };
-}
-
 const genreOptions = [
   { label: 'Ação', value: 'action' },
   { label: 'Drama', value: 'drama' },
@@ -63,7 +59,11 @@ async function getLocationBySlug(slug: string): Promise<FilmLocation | null> {
   return data.filmLocation;
 }
 
-export default async function LocationPage({ params }: LocationPageProps) {
+export default async function LocationPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const { slug } = params;
   const location = await getLocationBySlug(slug);
 
