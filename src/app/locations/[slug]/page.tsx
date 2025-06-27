@@ -65,6 +65,10 @@ export default async function LocationPage(props: any) {
 
   if (!location) return notFound();
 
+  const imageUrl = location.image?.url;
+  const isValidImage =
+    typeof imageUrl === 'string' && imageUrl.startsWith('http');
+
   return (
     <>
       <main className="min-h-screen text-white px-6 py-10">
@@ -81,13 +85,15 @@ export default async function LocationPage(props: any) {
             <div className="flex flex-col h-full">
               <h1 className="text-3xl font-bold mb-4">{location.title}</h1>
 
-              <Image
-                src={location?.image?.url}
-                alt={location.title}
-                width={800}
-                height={500}
-                className="rounded-xl object-cover w-full h-[450px]"
-              />
+              {isValidImage && (
+                <Image
+                  src={imageUrl}
+                  alt={location.title}
+                  width={800}
+                  height={500}
+                  className="rounded-xl object-cover w-full h-[450px]"
+                />
+              )}
             </div>
 
             <div className="flex flex-col justify-center h-full space-y-4">
