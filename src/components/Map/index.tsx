@@ -17,6 +17,7 @@ import {
   Music,
 } from 'lucide-react';
 import { FilmLocation } from '@/services/getFilmLocations';
+import { useFavorites } from '@/contexts/FavoriteContext';
 
 interface MapProps {
   locations: FilmLocation[];
@@ -27,9 +28,11 @@ export default function Map({ locations }: MapProps) {
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [selectedGenre, setSelectedGenre] = useState('all');
+  const { favorites } = useFavorites();
 
   const genreOptions = [
     { label: 'Todos', value: 'all', icon: ListFilter },
+    { label: 'Favoritos', value: 'favorites', icon: Heart },
     { label: 'Ação', value: 'action', icon: Film },
     { label: 'Drama', value: 'drama', icon: Drama },
     { label: 'Romance', value: 'romance', icon: Heart },
@@ -45,6 +48,8 @@ export default function Map({ locations }: MapProps) {
   const filteredLocations =
     selectedGenre === 'all'
       ? locations
+      : selectedGenre === 'favorites'
+      ? locations.filter((loc) => favorites.includes(loc.slug))
       : locations.filter((loc) =>
           loc.genre
             .split(',')
@@ -58,7 +63,7 @@ export default function Map({ locations }: MapProps) {
         container: 'map',
         style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
         center: [0, 20],
-        zoom: 2,
+        zoom: 0,
         pitch: 0,
         bearing: 0,
         attributionControl: false,

@@ -19,17 +19,10 @@ export async function getFilmLocations(): Promise<FilmLocation[]> {
   const query = gql`
     query {
       filmLocations(first: 1000) {
-        filmTitle
-        title
         slug
         latitude
         longitude
         genre
-        sceneUrl
-        image {
-          url
-        }
-        content
       }
     }
   `;

@@ -4,6 +4,7 @@ import { hygraph } from '@/api/hygraph';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { FavoriteButton } from '@/components/FavoriteButton';
 
 interface FilmLocation {
   title: string;
@@ -39,10 +40,7 @@ async function getLocationBySlug(slug: string): Promise<FilmLocation | null> {
         filmTitle
         title
         slug
-        latitude
-        longitude
         genre
-        sceneUrl
         image {
           url
         }
@@ -89,9 +87,9 @@ export default async function LocationPage(props: any) {
                 <Image
                   src={imageUrl}
                   alt={location.title}
-                  width={800}
-                  height={500}
-                  className="rounded-xl object-cover w-full h-[450px]"
+                  width={1000}
+                  height={800}
+                  className="rounded-xl object-contain w-full"
                 />
               )}
             </div>
@@ -128,6 +126,7 @@ export default async function LocationPage(props: any) {
                   {location.content}
                 </p>
               </div>
+              <FavoriteButton slug={location.slug} />
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
+import { FavoriteProvider } from '@/contexts/FavoriteContext';
 
 const poppins = Poppins({
   variable: '--font-poppins',
@@ -16,12 +17,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="pt-BR">
-      <body className={`${poppins.variable} antialiased`}>{children}</body>
+      <body className={`${poppins.variable} antialiased`}>
+        <FavoriteProvider>{children}</FavoriteProvider>
+      </body>
     </html>
   );
 }
